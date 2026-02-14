@@ -105,11 +105,11 @@ func TestWorkerTreeDiagram(t *testing.T) {
 
 	expectedStrings := []string{
 		"root{{", "Running", // Root supervisor
-		"worker-1[", "Running", // Worker 1 process
-		"worker-2[[", "Failed", // Worker 2 container
+		"worker-1[", "Running", // Worker 1 process (label, not ID)
+		"worker-2[[", "Failed", // Worker 2 container (label, not ID)
 		"class root supervisor",
-		"class worker-1_0 running",
-		"class worker-1_1 failed",
+		"class root_0 running",  // First child of root
+		"class root_1 failed",   // Second child of root
 	}
 
 	for _, want := range expectedStrings {
