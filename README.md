@@ -1,17 +1,22 @@
 # Introspection
 
-A generic Go package for component state introspection, monitoring, and visualization.
+A **domain-agnostic** Go package for component state introspection, monitoring, and visualization.
 
 ## Overview
 
 **Introspection** solves the generic problem of "how any Go component publishes its internal state for visualization and monitoring". Originally extracted from the [lifecycle](https://github.com/aretw0/lifecycle) project, this package provides:
 
+- **Domain-Agnostic Design**: No hardcoded terminology like "worker" or "signal" - works with any domain
 - **Introspectable Interface**: Components can expose their internal state
 - **TypedWatcher[S]**: Type-safe state watching with generics
 - **State Aggregation**: Combine state changes from multiple components
-- **Mermaid Diagram Generation**: Automatic visualization of component topology and state machines
+- **Customizable Mermaid Diagrams**: Automatic visualization with full control over labels, styles, and structure
 
-This package is useful for any project that wants to auto-document its topology at runtime and enable live monitoring and debugging.
+This package is useful for any project that wants to auto-document its topology at runtime and enable live monitoring and debugging **without being tied to specific domain terminology**.
+
+## Key Principle: Composability Over Context
+
+The package emphasizes **composability** - you define your domain, we provide the observation layer. No assumptions about "workers", "signals", or any other specific domain concepts.
 
 ## Features
 
@@ -41,30 +46,46 @@ type TypedWatcher[S any] interface {
 Aggregate state changes from multiple components into a unified stream:
 
 ```go
-snapshots := introspection.AggregateWatchers(ctx, worker, supervisor, signal)
+snapshots := introspection.AggregateWatchers(ctx, component1, component2, component3)
 for snapshot := range snapshots {
     fmt.Printf("Component %s changed state\n", snapshot.ComponentID)
 }
 ```
 
-### 4. Mermaid Diagram Generation
+### 4. Generic Mermaid Diagram Generation (Domain-Agnostic)
 
-Generate Mermaid diagrams for visualization:
-
-- **Worker Tree Diagram**: Hierarchical view of workers
-- **Signal State Machine**: Lifecycle state machine
-- **System Diagram**: Complete system topology
+Generate Mermaid diagrams with **full customization** - no hardcoded labels or terminology:
 
 ```go
-// Generate a worker tree diagram
-diagram := introspection.WorkerTreeDiagram(workerState)
+// Generic TreeDiagram - works with any hierarchical structure
+config := &introspection.DiagramConfig{
+    SecondaryID: "root",
+}
+diagram := introspection.TreeDiagram(hierarchyState, config)
 
-// Generate a signal state machine
-stateMachine := introspection.SignalStateMachine(signalState)
+// ComponentDiagram - fully customizable labels
+config := &introspection.DiagramConfig{
+    PrimaryID:        "controller",
+    PrimaryLabel:     "Control Layer",
+    PrimaryNodeLabel: "🎮 Controller",
+    SecondaryID:      "workers",
+    SecondaryLabel:   "Worker Pool",
+    ConnectionLabel:  "manages",
+}
+diagram := introspection.ComponentDiagram(controllerState, workerState, config)
 
-// Generate a complete system diagram
-systemDiagram := introspection.SystemDiagram(signalState, workerState)
+// StateMachineDiagram - custom state names and transitions
+smConfig := &introspection.StateMachineConfig{
+    InitialState:      "Active",
+    GracefulState:     "Draining",
+    ForcedState:       "Terminated",
+    InitialToGraceful: "SHUTDOWN",
+    GracefulToForced:  "KILL",
+}
+stateMachine := introspection.StateMachineDiagram(state, smConfig)
 ```
+
+**Backward Compatible**: Legacy functions (`WorkerTreeDiagram`, `SignalStateMachine`, `SystemDiagram`) remain available but are deprecated in favor of the generic versions.
 
 ## Installation
 
@@ -96,7 +117,7 @@ type MyComponent struct {
 }
 
 func (c *MyComponent) ComponentType() string {
-    return "worker"
+    return "processor"  // Use your own domain terminology
 }
 
 func (c *MyComponent) State() MyComponentState {
@@ -110,7 +131,7 @@ func (c *MyComponent) Watch(ctx context.Context) <-chan introspection.StateChang
 
 func main() {
     component := &MyComponent{
-        state: MyComponentState{Name: "worker-1", Status: "Running"},
+        state: MyComponentState{Name: "processor-1", Status: "Running"},
     }
     
     // Watch state changes
@@ -126,11 +147,27 @@ func main() {
 
 ## Examples
 
-See the [examples/basic](examples/basic) directory for a complete working example that demonstrates:
+### Generic Example (Custom Task Scheduler Domain)
+
+See the [examples/generic](examples/generic) directory for a complete working example demonstrating **domain-agnostic** usage with a Task Scheduler domain (no worker/signal terminology):
+- Custom domain types (Scheduler, Tasks)
+- Generic `TreeDiagram`, `ComponentDiagram`, `StateMachineDiagram`
+- Custom node styling and labeling
+- Fully customized labels and terminology
+
+Run the example:
+```bash
+cd examples/generic
+go run main.go
+```
+
+### Basic Example (Legacy Worker/Signal Domain)
+
+See the [examples/basic](examples/basic) directory for a complete working example using the original worker/signal domain that demonstrates:
 - Implementing the `Introspectable` interface
 - Using `TypedWatcher` for type-safe state watching
 - Aggregating state changes from multiple components
-- Generating Mermaid diagrams
+- Generating Mermaid diagrams (legacy functions)
 
 Run the example:
 ```bash
@@ -140,11 +177,12 @@ go run main.go
 
 ## Use Cases
 
-- **Observability**: Monitor the state of distributed system components
+- **Observability**: Monitor the state of distributed system components **in any domain**
 - **Debugging**: Track state transitions in real-time
-- **Documentation**: Auto-generate system topology diagrams
+- **Documentation**: Auto-generate system topology diagrams **with your terminology**
 - **Testing**: Verify component behavior through state inspection
 - **Monitoring**: Build dashboards that visualize component states
+- **Domain Modeling**: Express your system's architecture without framework constraints
 
 ## Key Interfaces
 
@@ -204,6 +242,29 @@ type StateSnapshot struct {
 
 The package includes powerful Mermaid diagram generation capabilities:
 
+### Domain-Agnostic Configuration
+
+Control every aspect of diagram generation through configuration:
+
+```go
+// Custom node styling based on your domain
+config := &introspection.DiagramConfig{
+    NodeStyler: func(metadata map[string]string) (icon, shapeStart, shapeEnd, cssClass string) {
+        switch metadata["type"] {
+        case "database":
+            return "🗄️", "[(", ")]", "container"
+        case "api":
+            return "🌐", "[/", "/]", "process"
+        default:
+            return "📋", "[", "]", "process"
+        }
+    },
+    NodeLabeler: func(name, status string, pid int, metadata map[string]string, icon string) string {
+        return fmt.Sprintf("%s %s [%s]", icon, name, status)
+    },
+}
+```
+
 ### Default Styles
 The package comes with pre-defined Mermaid styles for common component states:
 - Running (blue)
@@ -216,11 +277,28 @@ The package comes with pre-defined Mermaid styles for common component states:
 You can customize the appearance with your own Mermaid class definitions:
 
 ```go
-diagram := introspection.WorkerTreeDiagram(
+diagram := introspection.TreeDiagram(
     state,
+    config,
     introspection.WithStyles("classDef custom fill:#fff;"),
 )
 ```
+
+## Design Philosophy
+
+### Composability Over Context
+
+The package is designed around the principle that **generic observation mechanisms should not dictate domain terminology**. Instead of hardcoding terms like "worker", "signal", or "supervisor":
+
+- **You define your domain** (tasks, services, processors, etc.)
+- **You configure the visualization** (labels, icons, connections)
+- **You compose the observation layer** (watchers, aggregators, diagrams)
+
+This approach enables:
+- ✅ **True reusability** across different domains
+- ✅ **No conceptual coupling** to specific architectures
+- ✅ **Full control** over terminology and presentation
+- ✅ **Backward compatibility** with legacy code
 
 ## Testing
 
@@ -236,7 +314,7 @@ go test -v -cover
 
 ## Origin
 
-This package was extracted from the [lifecycle](https://github.com/aretw0/lifecycle) project to make it available as a standalone, reusable component for any Go project that needs state introspection and monitoring capabilities.
+This package was extracted from the [lifecycle](https://github.com/aretw0/lifecycle) project and made domain-agnostic to serve as a standalone, reusable component for any Go project that needs state introspection and monitoring capabilities.
 
 ## License
 
