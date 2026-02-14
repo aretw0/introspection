@@ -6,7 +6,7 @@ import "time"
 // The generic parameter S allows type-safe access to state without assertions.
 type StateChange[S any] struct {
 	ComponentID   string
-	ComponentType string // "worker", "signal", "supervisor"
+	ComponentType string // Component type identifier (e.g., "processor", "controller", "manager")
 	OldState      S
 	NewState      S
 	Timestamp     time.Time
@@ -16,9 +16,9 @@ type StateChange[S any] struct {
 // It unifies different state types via a common wrapper.
 type StateSnapshot struct {
 	ComponentID   string
-	ComponentType string // "worker", "signal", "supervisor"
+	ComponentType string // Component type identifier (e.g., "processor", "controller", "manager")
 	Timestamp     time.Time
-	Payload       any // worker.State, signal.State, etc
+	Payload       any // Component state as any type
 }
 
 // ComponentEvent is the interface for event sourcing.

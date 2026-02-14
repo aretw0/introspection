@@ -151,7 +151,8 @@ func (s *SignalHandler) Stop() {
 
 func main() {
 	fmt.Println("Introspection Package Demo")
-	fmt.Println("===========================\n")
+	fmt.Println("===========================")
+	fmt.Println()
 
 	// Create components
 	worker := NewWorker("worker-1", "MainWorker")
