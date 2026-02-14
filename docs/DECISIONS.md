@@ -11,6 +11,7 @@ This document captures key architectural and design decisions made for the intro
 5. [Mermaid for Visualization](#5-mermaid-for-visualization)
 6. [Zero Dependencies](#6-zero-dependencies)
 7. [Backward Compatibility](#7-backward-compatibility)
+8. [Ubuntu-Only CI Testing](#8-ubuntu-only-ci-testing)
 
 ---
 
@@ -312,6 +313,73 @@ func WorkerTreeDiagram(state any, options ...DiagramOption) string {
     // Delegate to generic implementation
 }
 ```
+
+---
+
+## 8. Ubuntu-Only CI Testing
+
+### Decision
+
+Run continuous integration tests only on `ubuntu-latest`, not across multiple operating systems.
+
+### Rationale
+
+**Problem**: Initially copied multi-OS CI workflow from lifecycle and procio projects, but those projects have fundamentally different needs.
+
+**Analysis**:
+- **lifecycle/procio**: Multi-OS testing is **essential**
+  - Platform-specific syscalls (Pdeathsig on Linux, Job Objects on Windows)
+  - OS-specific signal handling (SIGINT/SIGTERM vs Ctrl+C)
+  - Platform-specific terminal I/O (CONIN$ on Windows, stdin on Unix)
+  - Different process management primitives per OS
+
+- **introspection**: Multi-OS testing provides **no value**
+  - 100% platform-agnostic code (Go stdlib only)
+  - No OS-specific syscalls or primitives
+  - Interfaces, channels, reflection, string generation
+  - Works identically on all platforms
+
+**Solution**: Use only `ubuntu-latest` for CI testing.
+
+### Trade-offs
+
+✅ **Pros**:
+- 3x faster CI execution (~1 minute vs ~3 minutes)
+- 67% less GitHub Actions minutes consumption
+- Simpler workflow (no matrix strategy)
+- Easier to debug CI failures
+- Reflects actual project needs
+- Faster feedback for developers
+
+❌ **Cons**:
+- Won't detect hypothetical platform-specific issues
+- Different from sibling projects (but appropriately so)
+
+### Impact
+
+**CI Workflow Before**:
+```yaml
+strategy:
+  matrix:
+    os: [ubuntu-latest, windows-latest, macos-latest]
+runs-on: ${{ matrix.os }}
+# Runs 3 parallel jobs
+```
+
+**CI Workflow After**:
+```yaml
+runs-on: ubuntu-latest
+# Runs 1 job - sufficient for platform-agnostic code
+```
+
+### Lessons Learned
+
+Don't blindly copy infrastructure from other projects. Understand the **actual needs** of each project:
+
+- ✅ **lifecycle/procio**: Multi-OS necessary (platform-specific code)
+- ✅ **introspection**: Ubuntu sufficient (platform-agnostic code)
+
+Each project should have CI appropriate for its nature, not a one-size-fits-all approach.
 
 ---
 
