@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aretw0/instrospection"
+	"github.com/aretw0/introspection"
 )
 
 // Example using a Task Scheduling domain (not worker/signal)

@@ -1,7 +1,7 @@
 # Introspection
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/aretw0/instrospection)](https://goreportcard.com/report/github.com/aretw0/instrospection)
-[![Go Reference](https://pkg.go.dev/badge/github.com/aretw0/instrospection.svg)](https://pkg.go.dev/github.com/aretw0/instrospection)
+[![Go Report Card](https://goreportcard.com/badge/github.com/aretw0/introspection)](https://goreportcard.com/report/github.com/aretw0/introspection)
+[![Go Reference](https://pkg.go.dev/badge/github.com/aretw0/introspection.svg)](https://pkg.go.dev/github.com/aretw0/introspection)
 [![License](https://img.shields.io/github/license/aretw0/introspection.svg?color=red)](./LICENSE)
 [![Release](https://img.shields.io/github/release/aretw0/introspection.svg?branch=main)](https://github.com/aretw0/introspection/releases)
 
@@ -95,7 +95,7 @@ stateMachine := introspection.StateMachineDiagram(state, smConfig)
 ## Installation
 
 ```bash
-go get github.com/aretw0/instrospection
+go get github.com/aretw0/introspection
 ```
 
 ## Quick Start
@@ -106,7 +106,7 @@ package main
 import (
     "context"
     "fmt"
-    "github.com/aretw0/instrospection"
+    "github.com/aretw0/introspection"
 )
 
 // Define your component's state

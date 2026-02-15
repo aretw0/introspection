@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aretw0/instrospection"
+	"github.com/aretw0/introspection"
 )
 
 // WorkerState represents the state of a worker component.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	introspection "github.com/aretw0/instrospection"
+	introspection "github.com/aretw0/introspection"
 )
 
 // Example demonstrates basic usage of the introspection package
