@@ -1,5 +1,10 @@
 # Introspection
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/aretw0/instrospection)](https://goreportcard.com/report/github.com/aretw0/instrospection)
+[![Go Reference](https://pkg.go.dev/badge/github.com/aretw0/instrospection.svg)](https://pkg.go.dev/github.com/aretw0/instrospection)
+[![License](https://img.shields.io/github/license/aretw0/introspection.svg?color=red)](./LICENSE)
+[![Release](https://img.shields.io/github/release/aretw0/introspection.svg?branch=main)](https://github.com/aretw0/introspection/releases)
+
 A **domain-agnostic** Go package for component state introspection, monitoring, and visualization.
 
 ## Overview
