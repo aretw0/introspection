@@ -8,12 +8,13 @@
 
 ```text
 introspection/
+├── interfaces.go      # Core interfaces (Introspectable, Component, TypedWatcher, EventSource)
 ├── types.go           # Core types (StateChange, StateSnapshot, ComponentEvent)
-├── interfaces.go      # Core interfaces (Introspectable, TypedWatcher, Component)
-├── watcher.go         # State watching implementation
+├── adapter.go         # WatcherAdapter for cross-domain aggregation
 ├── aggregator.go      # Multi-component state aggregation
-├── adapter.go         # Legacy adapters for backward compatibility
-├── mermaid.go         # Mermaid diagram generation (domain-agnostic)
+├── mermaid.go         # Generic Mermaid diagram generation (TreeDiagram, ComponentDiagram, StateMachineDiagram)
+├── mermaid_legacy.go  # Deprecated Mermaid functions (WorkerTreeDiagram, SignalStateMachine, SystemDiagram)
+├── reflect.go         # Reflection helpers for struct field extraction
 ├── doc.go             # Package documentation
 ├── version.go         # Version embedding
 └── examples/          # Runnable examples
@@ -237,10 +238,10 @@ Legacy functions remain available but deprecated:
 
 ```text
 *_test.go files alongside implementation:
-- adapter_test.go
-- introspection_test.go
-- mermaid_test.go
-- mermaid_generic_test.go
+- introspection_test.go      # Core types, interfaces, aggregation
+- adapter_test.go            # WatcherAdapter
+- mermaid_generic_test.go    # Generic diagram functions
+- mermaid_legacy_test.go     # Legacy diagram functions
 ```
 
 ### Testing Philosophy
