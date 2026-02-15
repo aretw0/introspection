@@ -317,6 +317,16 @@ Run tests with coverage:
 go test -v -cover
 ```
 
+## Documentation
+
+For more detailed information:
+- [Release Process](docs/RELEASING.md) - How to create releases
+- [Technical Design](docs/TECHNICAL.md) - Architecture and design
+- [Product Vision](docs/PRODUCT.md) - Vision and use cases
+- [Configuration](docs/CONFIGURATION.md) - Configuration philosophy
+- [Recipes](docs/RECIPES.md) - Common usage patterns
+- [Decisions](docs/DECISIONS.md) - Design decisions
+
 ## Origin
 
 This package was extracted from the [lifecycle](https://github.com/aretw0/lifecycle) project and made domain-agnostic to serve as a standalone, reusable component for any Go project that needs state introspection and monitoring capabilities.
