@@ -9,6 +9,7 @@ This document outlines the current state and future direction of the introspecti
 ### ✅ Implemented (v0.1.0)
 
 #### Core Interfaces
+
 - [x] `Introspectable` - Basic state exposure
 - [x] `Component` - Component type identification
 - [x] `TypedWatcher[S]` - Type-safe state watching with generics
@@ -17,11 +18,13 @@ This document outlines the current state and future direction of the introspecti
 - [x] `StateSnapshot` - Point-in-time state capture
 
 #### State Management
+
 - [x] State aggregation from multiple components
 - [x] Channel-based state change propagation
 - [x] Context-aware cancellation
 
 #### Visualization
+
 - [x] Generic `TreeDiagram` - Hierarchical structures
 - [x] Generic `ComponentDiagram` - Component relationships
 - [x] Generic `StateMachineDiagram` - State transitions
@@ -30,14 +33,20 @@ This document outlines the current state and future direction of the introspecti
 - [x] Default Mermaid CSS classes for common states
 
 #### Backward Compatibility
+
 - [x] Legacy `WorkerTreeDiagram` (deprecated)
 - [x] Legacy `SignalStateMachine` (deprecated)
 - [x] Legacy `SystemDiagram` (deprecated)
 - [x] Adapter layer for smooth migration
 
 #### Examples
+
 - [x] Basic example (worker/signal domain)
 - [x] Generic example (task scheduler domain)
+
+### ✅ Implemented (v0.1.1)
+
+- [x] Add pkg.go.dev example_test.go.
 
 ## Roadmap
 
@@ -46,6 +55,7 @@ This document outlines the current state and future direction of the introspecti
 **Focus**: Expand diagram capabilities and customization options.
 
 #### Planned Features
+
 - [ ] **Sequence Diagrams**: Visualize component interactions over time
 - [ ] **Graph Layouts**: Support for different Mermaid graph directions (TB, LR, BT, RL)
 - [ ] **Conditional Styling**: Style nodes based on runtime conditions
@@ -53,6 +63,7 @@ This document outlines the current state and future direction of the introspecti
 - [ ] **Diagram Composition**: Combine multiple diagram types
 
 #### Examples to Add
+
 - [ ] Sequence diagram example
 - [ ] Multi-domain example (combining different component types)
 - [ ] Real-time visualization example (web dashboard)
@@ -62,6 +73,7 @@ This document outlines the current state and future direction of the introspecti
 **Focus**: Add quantitative observation capabilities.
 
 #### Planned Features
+
 - [ ] **State Duration Tracking**: How long components spend in each state
 - [ ] **Transition Counting**: Frequency of state transitions
 - [ ] **Health Metrics**: Aggregate component health indicators
@@ -69,6 +81,7 @@ This document outlines the current state and future direction of the introspecti
 - [ ] **Metrics Export**: Prometheus/OpenMetrics format support
 
 #### Integration Points
+
 - [ ] Metrics collection interface
 - [ ] Pluggable metrics backends
 - [ ] Time-series state snapshots
@@ -78,6 +91,7 @@ This document outlines the current state and future direction of the introspecti
 **Focus**: Support for complex observation scenarios.
 
 #### Planned Features
+
 - [ ] **State Filtering**: Filter state changes by criteria
 - [ ] **State Transformation**: Map/reduce over state changes
 - [ ] **State Replay**: Record and replay state change sequences
@@ -85,6 +99,7 @@ This document outlines the current state and future direction of the introspecti
 - [ ] **Conditional Watching**: Watch only when certain conditions are met
 
 #### Advanced Use Cases
+
 - [ ] A/B testing different component configurations
 - [ ] Historical state analysis
 - [ ] Distributed system correlation
@@ -94,6 +109,7 @@ This document outlines the current state and future direction of the introspecti
 **Focus**: Polish, documentation, and production-grade reliability.
 
 #### Requirements for 1.0
+
 - [ ] **Comprehensive Documentation**
   - [ ] Complete API documentation
   - [ ] Architecture guide
@@ -156,11 +172,13 @@ We follow [Semantic Versioning](https://semver.org/):
 Legacy functions will remain available through v0.x releases but will be removed in v1.0.
 
 **Recommended Migration**:
+
 1. Replace `WorkerTreeDiagram` with `TreeDiagram` + custom config
 2. Replace `SignalStateMachine` with `StateMachineDiagram` + custom config
 3. Replace `SystemDiagram` with `ComponentDiagram` + custom config
 
 **Timeline**:
+
 - v0.1.x: Legacy functions available, deprecated
 - v0.x: Legacy functions still available with deprecation warnings
 - v1.0: Legacy functions removed
@@ -168,6 +186,7 @@ Legacy functions will remain available through v0.x releases but will be removed
 ## Feedback
 
 We value feedback! Please open issues for:
+
 - Feature requests aligned with our goals
 - Bug reports
 - Documentation improvements
