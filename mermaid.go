@@ -56,9 +56,13 @@ type DiagramConfig struct {
 	// Connection configuration
 	ConnectionLabel string // Label for edge between components (default: "manages")
 
-	// Node style customization
+	// Node style customization (for secondary/tree nodes)
 	NodeStyler  NodeStyleFunc // Custom function to style nodes based on metadata
 	NodeLabeler NodeLabelFunc // Custom function to build node labels
+
+	// Primary node customization
+	PrimaryNodeStyler  PrimaryNodeStyleFunc // Custom function to determine CSS class for primary component
+	PrimaryNodeLabeler PrimaryNodeLabelFunc // Custom function to build HTML label for primary component
 }
 
 // NodeStyleFunc is a function that returns icon, shape start, shape end, and CSS class for a node.
@@ -67,17 +71,25 @@ type NodeStyleFunc func(metadata map[string]string) (icon, shapeStart, shapeEnd,
 // NodeLabelFunc is a function that builds the label for a node.
 type NodeLabelFunc func(name, status string, pid int, metadata map[string]string, icon string) string
 
+// PrimaryNodeStyleFunc determines the CSS class for the primary component based on its state.
+type PrimaryNodeStyleFunc func(state any) (cssClass string)
+
+// PrimaryNodeLabelFunc builds the HTML label for the primary component.
+type PrimaryNodeLabelFunc func(state any) string
+
 // DefaultDiagramConfig returns a generic configuration with no domain-specific terms.
 func DefaultDiagramConfig() *DiagramConfig {
 	return &DiagramConfig{
-		PrimaryID:        "primary",
-		PrimaryLabel:     "Primary Component",
-		PrimaryNodeLabel: "⚡ Component",
-		SecondaryID:      "secondary",
-		SecondaryLabel:   "Secondary Component",
-		ConnectionLabel:  "manages",
-		NodeStyler:       defaultNodeStyler,
-		NodeLabeler:      defaultNodeLabeler,
+		PrimaryID:          "primary",
+		PrimaryLabel:       "Primary Component",
+		PrimaryNodeLabel:   "⚡ Component",
+		SecondaryID:        "secondary",
+		SecondaryLabel:     "Secondary Component",
+		ConnectionLabel:    "manages",
+		NodeStyler:         defaultNodeStyler,
+		NodeLabeler:        defaultNodeLabeler,
+		PrimaryNodeStyler:  defaultPrimaryNodeStyler,
+		PrimaryNodeLabeler: defaultPrimaryNodeLabeler,
 	}
 }
 
@@ -125,6 +137,62 @@ func defaultNodeLabeler(name, status string, pid int, metadata map[string]string
 	return strings.Join(parts, "<br/>")
 }
 
+// defaultPrimaryNodeStyler provides default CSS class styling for primary components.
+// It uses reflection to find common state fields (Enabled, Stopping, Stopped).
+func defaultPrimaryNodeStyler(state any) string {
+	v := reflect.ValueOf(state)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	enabled := getBoolField(v, "Enabled")
+	stopping := getBoolField(v, "Stopping")
+	stopped := getBoolField(v, "Stopped")
+
+	if !enabled {
+		return "stopped"
+	} else if stopped {
+		return "stopped"
+	} else if stopping {
+		return "pending"
+	}
+	return "running"
+}
+
+// defaultPrimaryNodeLabeler provides default HTML label formatting for primary components.
+// It uses reflection to find common state fields (Enabled, Stopping, Stopped, Reason).
+func defaultPrimaryNodeLabeler(state any) string {
+	v := reflect.ValueOf(state)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	enabled := getBoolField(v, "Enabled")
+	stopping := getBoolField(v, "Stopping")
+	stopped := getBoolField(v, "Stopped")
+	reason := getStringField(v, "Reason")
+
+	statusMode := "Running"
+	if !enabled {
+		statusMode = "Disabled"
+	} else if stopped {
+		statusMode = "Stopped"
+	} else if stopping {
+		statusMode = "Stopping"
+	}
+
+	if reason == "" {
+		reason = "None"
+	}
+
+	label := fmt.Sprintf("Mode: %s", statusMode)
+	if reason != "None" {
+		label += fmt.Sprintf("<br/>Reason: %s", reason)
+	}
+
+	return label
+}
+
 // ComponentDiagram renders a customizable topology diagram with two components.
 // This is a generic version that allows full customization of labels and styling.
 func ComponentDiagram(primary, secondary any, config *DiagramConfig, opts ...MermaidOption) string {
@@ -142,7 +210,7 @@ func ComponentDiagram(primary, secondary any, config *DiagramConfig, opts ...Mer
 
 	// 1. Primary Component Subgraph
 	sb.WriteString(fmt.Sprintf("    subgraph %s_graph [%s]\n", config.PrimaryID, config.PrimaryLabel))
-	renderGenericFragment(&sb, primary, config.PrimaryID, config.PrimaryNodeLabel, "        ")
+	renderGenericFragment(&sb, primary, config.PrimaryID, config.PrimaryNodeLabel, "        ", config.PrimaryNodeStyler, config.PrimaryNodeLabeler)
 	sb.WriteString("    end\n\n")
 
 	// 2. Secondary Component Subgraph
@@ -263,39 +331,22 @@ func StateMachineDiagram(state any, config *StateMachineConfig, opts ...MermaidO
 }
 
 // renderGenericFragment renders a single component node (for primary/controller type components).
-func renderGenericFragment(sb *strings.Builder, comp any, id, labelPrefix, indent string) {
-	v := reflect.ValueOf(comp)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+// If styler and labeler are provided, uses them. Otherwise, uses default reflection-based behavior.
+func renderGenericFragment(sb *strings.Builder, comp any, id, labelPrefix, indent string, styler PrimaryNodeStyleFunc, labeler PrimaryNodeLabelFunc) {
+	// Use provided functions or defaults
+	if styler == nil {
+		styler = defaultPrimaryNodeStyler
+	}
+	if labeler == nil {
+		labeler = defaultPrimaryNodeLabeler
 	}
 
-	enabled := getBoolField(v, "Enabled")
-	stopping := getBoolField(v, "Stopping")
-	stopped := getBoolField(v, "Stopped")
-	reason := getStringField(v, "Reason")
+	// Get styling and label from the custom functions
+	statusClass := styler(comp)
+	labelContent := labeler(comp)
 
-	statusMode := "Running"
-	statusClass := "running"
-
-	if !enabled {
-		statusMode = "Disabled"
-		statusClass = "stopped"
-	} else if stopped {
-		statusMode = "Stopped"
-		statusClass = "stopped"
-	} else if stopping {
-		statusMode = "Stopping"
-		statusClass = "pending"
-	}
-
-	if reason == "" {
-		reason = "None"
-	}
-
-	label := fmt.Sprintf("<b>%s</b><br/>Mode: %s", labelPrefix, statusMode)
-	if reason != "None" {
-		label += fmt.Sprintf("<br/>Reason: %s", reason)
-	}
+	// Build the full label with the prefix
+	label := fmt.Sprintf("<b>%s</b><br/>%s", labelPrefix, labelContent)
 
 	sb.WriteString(fmt.Sprintf("%s%s[\"%s\"]:::signal\n", indent, id, label))
 	sb.WriteString(fmt.Sprintf("%sclass %s %s\n", indent, id, statusClass))
