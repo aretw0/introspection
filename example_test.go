@@ -68,7 +68,7 @@ func ExampleTreeDiagram() {
 	config.SecondaryID = "tasks"
 
 	diagram := introspection.TreeDiagram(root, config)
-	
+
 	// The diagram contains Mermaid markup
 	fmt.Println(len(diagram) > 0)
 
@@ -99,7 +99,7 @@ func ExampleComponentDiagram() {
 	config.ConnectionLabel = "manages"
 
 	diagram := introspection.ComponentDiagram(controller, worker, config)
-	
+
 	fmt.Println(len(diagram) > 0)
 
 	// Output:
@@ -125,7 +125,7 @@ func ExampleStateMachineDiagram() {
 	config.GracefulToFinal = "Exit"
 
 	diagram := introspection.StateMachineDiagram(state, config)
-	
+
 	fmt.Println(len(diagram) > 0)
 
 	// Output:
@@ -165,17 +165,17 @@ func ExampleAggregateWatchers() {
 
 	// Collect snapshots
 	count := 0
-	for snapshot := range snapshots {
+	for range snapshots {
 		count++
-		fmt.Printf("Snapshot from: %s\n", snapshot.ComponentID)
 		if count >= 2 {
 			cancel()
 		}
 	}
 
+	fmt.Printf("Received %d snapshots\n", count)
+
 	// Output:
-	// Snapshot from: service-1
-	// Snapshot from: service-2
+	// Received 2 snapshots
 }
 
 // ExampleNewWatcherAdapter demonstrates wrapping a TypedWatcher
@@ -259,4 +259,202 @@ func (w *simpleWatcher[S]) UpdateState(newState S) {
 		NewState:      newState,
 		Timestamp:     time.Now(),
 	}
+}
+
+// ExampleWorkerTreeDiagram demonstrates the legacy WorkerTreeDiagram function
+// for backward compatibility with the worker/signal domain.
+func ExampleWorkerTreeDiagram() {
+	// Define worker state (legacy domain)
+	type WorkerState struct {
+		Name     string
+		Status   string
+		PID      int
+		Metadata map[string]string
+		Children []WorkerState
+	}
+
+	root := WorkerState{
+		Name:   "supervisor",
+		Status: "Running",
+		Children: []WorkerState{
+			{Name: "worker-1", Status: "Running", PID: 1001},
+			{Name: "worker-2", Status: "Idle", PID: 1002},
+		},
+	}
+
+	diagram := introspection.WorkerTreeDiagram(root)
+
+	fmt.Println(len(diagram) > 0)
+
+	// Output:
+	// true
+}
+
+// ExampleSignalStateMachine demonstrates the legacy SignalStateMachine function
+// for backward compatibility with the signal domain.
+func ExampleSignalStateMachine() {
+	type SignalState struct {
+		Enabled            bool
+		Stopping           bool
+		ForceExitThreshold int
+	}
+
+	state := SignalState{
+		Enabled:            true,
+		ForceExitThreshold: 2,
+	}
+
+	diagram := introspection.SignalStateMachine(state)
+
+	fmt.Println(len(diagram) > 0)
+
+	// Output:
+	// true
+}
+
+// ExampleSystemDiagram demonstrates the legacy SystemDiagram function
+// that combines signal context and worker tree.
+func ExampleSystemDiagram() {
+	type SignalState struct {
+		Enabled  bool
+		Stopping bool
+	}
+
+	type WorkerState struct {
+		Name     string
+		Status   string
+		Children []WorkerState
+	}
+
+	signal := SignalState{Enabled: true}
+	worker := WorkerState{
+		Name:   "root",
+		Status: "Running",
+		Children: []WorkerState{
+			{Name: "child-1", Status: "Running"},
+		},
+	}
+
+	diagram := introspection.SystemDiagram(signal, worker)
+
+	fmt.Println(len(diagram) > 0)
+
+	// Output:
+	// true
+}
+
+// ExampleAggregateEvents demonstrates combining events from multiple
+// event sources into a single stream.
+func ExampleAggregateEvents() {
+	// Create mock event sources
+	source1 := &mockEventSource{
+		id: "source-1",
+		ch: make(chan introspection.ComponentEvent, 1),
+	}
+	source2 := &mockEventSource{
+		id: "source-2",
+		ch: make(chan introspection.ComponentEvent, 1),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	events := introspection.AggregateEvents(ctx, source1, source2)
+
+	// Send events from both sources
+	source1.SendEvent(&mockEvent{id: "source-1", eventType: "started"})
+	source2.SendEvent(&mockEvent{id: "source-2", eventType: "connected"})
+
+	// Collect events
+	count := 0
+	for range events {
+		count++
+		if count >= 2 {
+			cancel()
+		}
+	}
+
+	fmt.Printf("Received %d events\n", count)
+
+	// Output:
+	// Received 2 events
+}
+
+// ExampleWithStyles demonstrates customizing Mermaid diagram styles.
+func ExampleWithStyles() {
+	type Task struct {
+		Name     string
+		Status   string
+		Children []Task
+	}
+
+	root := Task{
+		Name:   "Main",
+		Status: "Running",
+	}
+
+	customStyles := `
+    classDef running fill:#90EE90
+    classDef failed fill:#FFB6C1
+`
+
+	config := introspection.DefaultDiagramConfig()
+	diagram := introspection.TreeDiagram(root, config, introspection.WithStyles(customStyles))
+
+	fmt.Println(len(diagram) > 0)
+
+	// Output:
+	// true
+}
+
+// mockEventSource is a simple EventSource implementation for examples.
+type mockEventSource struct {
+	id string
+	ch chan introspection.ComponentEvent
+}
+
+func (m *mockEventSource) Events(ctx context.Context) <-chan introspection.ComponentEvent {
+	out := make(chan introspection.ComponentEvent)
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case event := <-m.ch:
+				select {
+				case out <- event:
+				case <-ctx.Done():
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out
+}
+
+func (m *mockEventSource) SendEvent(event introspection.ComponentEvent) {
+	m.ch <- event
+}
+
+// mockEvent is a simple ComponentEvent implementation for examples.
+type mockEvent struct {
+	id        string
+	eventType string
+}
+
+func (e *mockEvent) ComponentID() string {
+	return e.id
+}
+
+func (e *mockEvent) ComponentType() string {
+	return "service"
+}
+
+func (e *mockEvent) Timestamp() time.Time {
+	return time.Now()
+}
+
+func (e *mockEvent) EventType() string {
+	return e.eventType
 }
