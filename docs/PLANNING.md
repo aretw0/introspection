@@ -1,6 +1,6 @@
 # Planning & Roadmap: Introspection
 
-## Current Version: 0.1.0
+## Current Version: 0.1.2
 
 This document outlines the current state and future direction of the introspection package.
 
@@ -47,6 +47,15 @@ This document outlines the current state and future direction of the introspecti
 ### ✅ Implemented (v0.1.1)
 
 - [x] Add pkg.go.dev example_test.go.
+
+### 🔄 In Progress (v0.1.2)
+
+- [x] Fix module path typo: `instrospection` → `introspection` (PR #6)
+- [x] Document post-merge steps for re-tagging and pkg.go.dev (`docs/MODULE_RENAME.md`)
+- [x] Add decision record for module rename (`docs/DECISIONS.md` #10)
+- [ ] Delete old tags and releases (manual, post-merge)
+- [ ] Re-tag as `v0.1.2` (manual, post-merge)
+- [ ] Verify pkg.go.dev indexing (manual, post-merge)
 
 ## Roadmap
 

@@ -13,6 +13,7 @@ This document captures key architectural and design decisions made for the intro
 7. [Backward Compatibility](#7-backward-compatibility)
 8. [Ubuntu-Only CI Testing](#8-ubuntu-only-ci-testing)
 9. [CI Workflow Optimization - Avoid Duplicate Runs](#9-ci-workflow-optimization---avoid-duplicate-runs)
+10. [Module Path Rename - instrospection → introspection](#10-module-path-rename---instrospection--introspection)
 
 ---
 
@@ -472,6 +473,49 @@ For a typical development cycle:
 - **Before**: ~8-12 CI runs per feature (push + PR events)
 - **After**: ~4-6 CI runs per feature (PR events only)
 - **Savings**: ~50% reduction in CI minutes
+
+---
+
+## 10. Module Path Rename - instrospection → introspection
+
+### Decision
+
+Fix the Go module path from `github.com/aretw0/instrospection` to `github.com/aretw0/introspection`, delete old tags/releases, and publish a new version (`v0.1.2`).
+
+### Rationale
+
+**Problem**: The Go module was published with a typo in the module path (`instrospection` instead of `introspection`). This made the module path inconsistent with the GitHub repository URL, preventing `go get` from resolving the module correctly.
+
+**Options Considered**:
+1. **Rewrite git history**: Use `git filter-branch` or `git filter-repo` to fix the typo across all commits, then force-push and re-tag
+2. **New version with fix**: Fix the typo in a new commit, delete old tags, and publish a new version
+3. **New major version**: Start a `v2` module path with the correct spelling
+
+**Decision**: Option 2 — New version with fix
+
+### Trade-offs
+
+✅ **Pros**:
+- Clean fix without disrupting git history
+- Safe for Go module proxy and checksum database
+- Minimal disruption to any existing consumers
+- Old versions can be retracted
+
+❌ **Cons**:
+- Old tags/releases must be manually deleted
+- Requires manual steps after merging (see `docs/MODULE_RENAME.md`)
+
+### Why Not Rewrite History?
+
+Go modules have unique constraints that make history rewriting ineffective:
+
+1. **Module proxy caching**: `proxy.golang.org` permanently caches published versions
+2. **Checksum database**: `sum.golang.org` records hashes; changed hashes cause verification failures
+3. **Force push risks**: Breaks other contributors' local clones and CI
+
+### Post-Merge Steps
+
+See [`docs/MODULE_RENAME.md`](MODULE_RENAME.md) for the complete checklist of manual steps required after merging the fix.
 
 ---
 
