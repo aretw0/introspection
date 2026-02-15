@@ -12,6 +12,7 @@ This document captures key architectural and design decisions made for the intro
 6. [Zero Dependencies](#6-zero-dependencies)
 7. [Backward Compatibility](#7-backward-compatibility)
 8. [Ubuntu-Only CI Testing](#8-ubuntu-only-ci-testing)
+9. [CI Workflow Optimization - Avoid Duplicate Runs](#9-ci-workflow-optimization---avoid-duplicate-runs)
 
 ---
 
@@ -380,6 +381,97 @@ Don't blindly copy infrastructure from other projects. Understand the **actual n
 - ✅ **introspection**: Ubuntu sufficient (platform-agnostic code)
 
 Each project should have CI appropriate for its nature, not a one-size-fits-all approach.
+
+---
+
+## 9. CI Workflow Optimization - Avoid Duplicate Runs
+
+### Decision
+
+Configure CI workflow to run on `pull_request` events for all branches, but only on `push` events for the `main` branch.
+
+### Rationale
+
+**Problem**: The original workflow configuration triggered on both `push` and `pull_request` for all branches:
+
+```yaml
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+```
+
+This caused **duplicate pipeline runs** when:
+- Developer pushes to a feature branch that has an open PR
+- Result: 2 identical test runs (push event + PR event)
+- Waste of GitHub Actions minutes and processing resources
+
+**Analysis**:
+- **Feature branches with PRs**: Only need PR pipeline (already tests the code)
+- **Main branch**: Needs push pipeline (no PRs, direct protection)
+- **Feature branches without PRs**: Developers can open draft PR for testing
+
+**Solution**: Optimize triggers to run tests exactly once per code change:
+
+```yaml
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["**"]
+```
+
+### Trade-offs
+
+✅ **Pros**:
+- ~50% reduction in CI runs for feature branches with PRs
+- More efficient use of GitHub Actions minutes
+- Faster feedback (no queue waiting for duplicate jobs)
+- Encourages PR-based workflow (best practice)
+- Main branch still protected with automatic tests
+
+❌ **Cons**:
+- Feature branches without PRs won't run CI automatically on push
+- Developers must open PR (even draft) to trigger CI
+
+### Impact
+
+**Before**:
+```
+Feature branch push → CI runs (1)
+Open PR → CI runs again (2)
+Push to PR branch → CI runs twice (3 + 4)
+Total: 4 runs for 2 actual code changes
+```
+
+**After**:
+```
+Feature branch push → No CI
+Open PR → CI runs (1)
+Push to PR branch → CI runs (2)
+Total: 2 runs for 2 actual code changes
+```
+
+**Main branch**:
+```
+Push to main → CI runs (unchanged, still protected)
+```
+
+### Best Practices Alignment
+
+This aligns with GitHub's recommended practices:
+- Use PRs for code review and testing
+- Protect main branch with status checks
+- Avoid redundant CI runs
+- Optimize for cost and speed
+
+### Resource Savings
+
+For a typical development cycle:
+- **Before**: ~8-12 CI runs per feature (push + PR events)
+- **After**: ~4-6 CI runs per feature (PR events only)
+- **Savings**: ~50% reduction in CI minutes
 
 ---
 
